@@ -34,6 +34,10 @@
     var speed = 2
 		var playerRect = null, ballRect = null, scoreText = null
 		var stage = null, mainLayer = null
+		var browserSize = {
+			width: window.innerWidth || document.body.clientWidth,
+			height: window.innerHeight || document.body.clientHeight
+		}
     window.addEventListener('load', function() {
 	    // create a stage
 			stage = acgraph.create('stage-container', "100%", "100%");
@@ -54,11 +58,7 @@
 			mainLayer.addChild(stageRect)
 			mainLayer.addChild(playerRect)
 			mainLayer.addChild(ballRect)
-			var size = {
-				width: window.innerWidth || document.body.clientWidth,
-				height: window.innerHeight || document.body.clientHeight
-			}
-			var scaleFactor = Math.min(size.width / 400, size.height / 400)
+			var scaleFactor = Math.min(browserSize.width / 400, browserSize.height / 400)
 			mainLayer.scale( scaleFactor, scaleFactor , 0, 0)
 	    draw()
     })
@@ -76,6 +76,19 @@
     		stopRight()
     	}
     });
+    window.addEventListener('touchstart', function(event) {
+		  touches = event.touches;
+		  var left = touches[0].clientX < (browserSize.width / 2)
+		  if(left) {
+		  	moveLeft()
+		  }else{
+		  	moveRight()
+		  }
+		}, false)
+    window.addEventListener('touchend', function(event) {
+    	stopLeft()
+    	stopRight()
+		}, false)
     function moveLeft() {
     	player.state = 'left'
     }
