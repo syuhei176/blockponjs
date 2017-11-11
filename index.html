@@ -1,0 +1,201 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>GraphicsJS Basic Example</title>    
+  </head>
+  <body>
+    <div id="stage-container" style="width: 100%; height: 100%;"></div>
+
+    <script src="https://cdn.anychart.com/js/latest/graphics.min.js"></script>
+    <script>
+    var player = {
+    	x:100,
+    	y:320,
+    	w: 80,
+    	h: 30,
+    	offset: 7
+    }
+    var ball = {
+    	x: 200,
+    	y: 200,
+    	r: 5,
+    	dx: 0.0,
+    	dy: -1.5
+    }
+    var boxes = []
+    for(var i=0;i < 7;i++) {
+	    for(var j=0;j < 8;j++) {
+	    	boxes.push({x: 50 + j * 32, y: 50 + i * 20, w: 30, h: 18})
+	    }
+    }
+    var phase = 'start'
+    var speed = 2
+		var playerRect = null, ballRect = null
+		var stage = null, mainLayer = null
+    window.addEventListener('load', function() {
+	    // create a stage
+			stage = acgraph.create('stage-container', "100%", "100%");
+			mainLayer = stage.layer()
+			moveToStart()
+			// draw a rectangle
+			var stageRect = stage.rect(30, 30, 340, 350);
+			playerRect = stage.rect(player.x, player.y, player.w, player.h);
+			ballRect = stage.circle(ball.x, ball.y, ball.r)
+			boxes.map(function(box) {
+				var newBox = stage.rect(box.x, box.y, box.w, box.h);
+				mainLayer.addChild(newBox)
+				box.elem = newBox
+				box.deleted = false
+			})
+			mainLayer.addChild(stageRect)
+			mainLayer.addChild(playerRect)
+			mainLayer.addChild(ballRect)
+			var size = {
+				width: window.innerWidth || document.body.clientWidth,
+				height: window.innerHeight || document.body.clientHeight
+			}
+			var scaleFactor = Math.min(size.width / 400, size.height / 400)
+			mainLayer.scale( scaleFactor, scaleFactor , 0, 0)
+	    draw()
+    })
+    addEventListener("keydown" , function(e) {
+    	console.log(e.keyCode)
+    	if(e.keyCode == 37) {
+    		moveLeft()
+    	}else if(e.keyCode == 39) {
+    		moveRight()
+    	}
+    });
+    addEventListener("keyup" , function(e) {
+    	console.log(e.keyCode)
+    	if(e.keyCode == 37) {
+    		stopLeft()
+    	}else if(e.keyCode == 39) {
+    		stopRight()
+    	}
+    });
+    function moveLeft() {
+    	player.state = 'left'
+    }
+    function moveRight() {
+    	player.state = 'right'
+    }
+    function stopLeft() {
+    	player.state = 'stop'
+    }
+    function stopRight() {
+    	player.state = 'stop'
+    }
+    function drawPlayer() {
+    	if(player.state == 'left') {
+	    	player.x -= player.offset
+	    	if(player.x < 30) player.x = 30
+    	}else if(player.state == 'right') {
+	    	player.x += player.offset
+	    	if(player.x > (370 - player.w) ) player.x = (370 - player.w)
+    	}
+    	playerRect.setPosition(player.x, player.y)
+    }
+    function drawBall() {
+    	ball.x += ball.dx
+    	if(hitBox()) {
+    		//横方向に当たった
+	    	ball.x -= ball.dx
+	    	ball.dx *= -1
+    	}
+    	ball.y += ball.dy
+    	if(hitBox()) {
+    		//縦方向に当たった
+	    	ball.y -= ball.dy
+	    	ball.dy *= -1
+    	}
+    	if(ball.x < 30) {
+    		ball.x = 30
+    		ball.dx = Math.abs(ball.dx)
+    	}
+    	if(ball.x > 340) {
+    		ball.x = 340
+    		ball.dx = -Math.abs(ball.dx)
+    	}
+    	if(ball.y < 30) {
+    		ball.y = 30
+    		ball.dy = Math.abs(ball.dy)
+    	}
+    	if(ball.y > player.y - 15 && ball.x + ball.r > player.x && ball.x - ball.r < player.x + player.w) {
+    		ball.y = player.y - 15
+    		ball.dy = -Math.abs(ball.dy)
+    		var allLength = (player.w + ball.r) / 2 * 1.2
+    		var r = ball.x + 5 - player.x - allLength
+    		ball.dx += r / allLength
+    		var len = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy)
+    		ball.dx = ball.dx / len * speed
+    		ball.dy = ball.dy / len * speed
+    		console.log(ball.dx)
+    	}
+    	if(ball.y > player.y + 20) {
+    		console.log("game over")
+    		moveToGameOver()
+    	}
+    	ballRect.setPosition(ball.x, ball.y)
+    }
+    function hitBox() {
+			return boxes.filter(function(box) {
+				return box.deleted == false && (box.x + box.w > ball.x - ball.r && box.x < ball.x + ball.r) && (box.y + box.h > ball.y - ball.r && box.y < ball.y + ball.r)
+			}).map(function(box) {
+				box.elem.remove()
+				box.deleted = true
+				return box
+			}).length > 0
+    }
+    function draw() {
+    	switch(phase) {
+    		case 'start':
+    			break;
+    		case 'main':
+		    	drawPlayer()
+		    	drawBall()
+    			break;
+    		case 'gameover':
+    			break;
+    		default:
+
+    	}
+			window.requestAnimationFrame(draw);
+    }
+    function moveToStart() {
+    	var startText = stage.text(150, 100, "Game Start", {"fontSize": 20});
+			mainLayer.addChild(startText)
+    	startText.listen('click', function(e) {
+    		startText.remove()
+    		moveToMain()
+    	})
+    	phase = 'start'
+    }
+    function moveToMain() {
+    	ball.x = 200
+    	ball.y = 200
+    	ball.dx = 0
+    	ball.dy = -2
+    	phase = 'main'
+    }
+    function moveToGameOver() {
+    	var gameoverText = stage.text(150, 100, "Game Over", {"fontSize": 20});
+			mainLayer.addChild(gameoverText)
+    	gameoverText.listen('click', function(e) {
+    		gameoverText.remove()
+    		moveToMain()
+    	})
+    	phase = 'gameover'
+    }
+    window.requestAnimationFrame = window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    window.oRequestAnimationFrame ||
+    window.msRequestAnimationFrame ||
+    function (callback) {
+        console.log('Warn: old browser');
+        setTimeout(callback, DEFAULT_FRAME_INTERVAL);
+    };
+    </script>
+  </body>
+</html>
