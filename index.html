@@ -10,17 +10,17 @@
     <script>
     var player = {
     	x:100,
-    	y:320,
-    	w: 80,
-    	h: 30,
+    	y:330,
+    	w: 78,
+    	h: 24,
     	offset: 7
     }
     var ball = {
-    	x: 200,
-    	y: 200,
+    	x: 120,
+    	y: 120,
     	r: 5,
     	dx: 0.0,
-    	dy: -1.5
+    	dy: 0.0
     }
     var boxes = []
     for(var i=0;i < 7;i++) {
@@ -28,9 +28,11 @@
 	    	boxes.push({x: 50 + j * 32, y: 50 + i * 20, w: 30, h: 18})
 	    }
     }
+    var score = 0
+    var scoreChain = 0
     var phase = 'start'
     var speed = 2
-		var playerRect = null, ballRect = null
+		var playerRect = null, ballRect = null, scoreText = null
 		var stage = null, mainLayer = null
     window.addEventListener('load', function() {
 	    // create a stage
@@ -39,6 +41,7 @@
 			moveToStart()
 			// draw a rectangle
 			var stageRect = stage.rect(30, 30, 340, 350);
+			scoreText = stage.text(340, 10, 'Score ' + score)
 			playerRect = stage.rect(player.x, player.y, player.w, player.h);
 			ballRect = stage.circle(ball.x, ball.y, ball.r)
 			boxes.map(function(box) {
@@ -47,6 +50,7 @@
 				box.elem = newBox
 				box.deleted = false
 			})
+			mainLayer.addChild(scoreText)
 			mainLayer.addChild(stageRect)
 			mainLayer.addChild(playerRect)
 			mainLayer.addChild(ballRect)
@@ -59,7 +63,6 @@
 	    draw()
     })
     addEventListener("keydown" , function(e) {
-    	console.log(e.keyCode)
     	if(e.keyCode == 37) {
     		moveLeft()
     	}else if(e.keyCode == 39) {
@@ -67,7 +70,6 @@
     	}
     });
     addEventListener("keyup" , function(e) {
-    	console.log(e.keyCode)
     	if(e.keyCode == 37) {
     		stopLeft()
     	}else if(e.keyCode == 39) {
@@ -121,16 +123,16 @@
     		ball.y = 30
     		ball.dy = Math.abs(ball.dy)
     	}
-    	if(ball.y > player.y - 15 && ball.x + ball.r > player.x && ball.x - ball.r < player.x + player.w) {
+    	if(ball.y > player.y - 15 && ball.x + ball.r * 2 > player.x && ball.x < player.x + player.w) {
     		ball.y = player.y - 15
     		ball.dy = -Math.abs(ball.dy)
-    		var allLength = (player.w + ball.r) / 2 * 1.2
+    		var allLength = (player.w + ball.r) / 2
     		var r = ball.x + 5 - player.x - allLength
-    		ball.dx += r / allLength
+    		ball.dx += r / allLength * 1.2
     		var len = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy)
     		ball.dx = ball.dx / len * speed
     		ball.dy = ball.dy / len * speed
-    		console.log(ball.dx)
+    		scoreChain = 0
     	}
     	if(ball.y > player.y + 20) {
     		console.log("game over")
@@ -140,10 +142,20 @@
     }
     function hitBox() {
 			return boxes.filter(function(box) {
-				return box.deleted == false && (box.x + box.w > ball.x - ball.r && box.x < ball.x + ball.r) && (box.y + box.h > ball.y - ball.r && box.y < ball.y + ball.r)
+				box.elem.fill('#ffffff', 1)
+				return box.deleted == false && (ball.x < box.x + box.w  && box.x < ball.x + ball.r * 2) && ( ball.y < box.y + box.h && box.y < ball.y + ball.r * 2)
 			}).map(function(box) {
+				box.elem.fill('#00ff00', 1)
 				box.elem.remove()
 				box.deleted = true
+				score += Math.pow(2, scoreChain)
+				scoreChain++
+				scoreText.text('Score ' + score)
+				if(boxes.filter(function(box) {
+					return !box.deleted
+				}) == 0) {
+					moveToClear()
+				}
 				return box
 			}).length > 0
     }
@@ -157,35 +169,64 @@
     			break;
     		case 'gameover':
     			break;
+    		case 'gameclear':
+    			break;
     		default:
 
     	}
 			window.requestAnimationFrame(draw);
     }
     function moveToStart() {
-    	var startText = stage.text(150, 100, "Game Start", {"fontSize": 20});
+    	var startRect = stage.rect(120, 260, 160, 30);
+    	startRect.fill("#aaa", 0.5)
+    	var startText = stage.text(145, 260, "Game Start", {"fontSize": 20});
+			mainLayer.addChild(startRect)
 			mainLayer.addChild(startText)
-    	startText.listen('click', function(e) {
+    	startRect.listen('click', next)
+    	startText.listen('click', next)
+    	function next() {
+    		startRect.remove()
     		startText.remove()
     		moveToMain()
-    	})
+    	}
     	phase = 'start'
     }
     function moveToMain() {
     	ball.x = 200
     	ball.y = 200
     	ball.dx = 0
-    	ball.dy = -2
+    	ball.dy = 1
     	phase = 'main'
     }
     function moveToGameOver() {
-    	var gameoverText = stage.text(150, 100, "Game Over", {"fontSize": 20});
+    	var gameoverRect = stage.rect(120, 260, 160, 30);
+    	gameoverRect.fill("#aaa", 0.5)
+    	var gameoverText = stage.text(145, 260, "Game Over", {"fontSize": 20});
+			mainLayer.addChild(gameoverRect)
 			mainLayer.addChild(gameoverText)
-    	gameoverText.listen('click', function(e) {
+    	gameoverRect.listen('click', next)
+    	gameoverText.listen('click', next)
+    	function next() {
+    		gameoverRect.remove()
     		gameoverText.remove()
     		moveToMain()
-    	})
+    	}
     	phase = 'gameover'
+    }
+    function moveToClear() {
+    	var gameoverRect = stage.rect(100, 260, 200, 30);
+    	gameoverRect.fill("#aaa", 0.5)
+    	var gameoverText = stage.text(120, 260, "Game Clear " + score, {"fontSize": 20});
+			mainLayer.addChild(gameoverRect)
+			mainLayer.addChild(gameoverText)
+    	gameoverRect.listen('click', next)
+    	gameoverText.listen('click', next)
+    	function next() {
+    		gameoverRect.remove()
+    		gameoverText.remove()
+    		moveToMain()
+    	}
+    	phase = 'gameclear'
     }
     window.requestAnimationFrame = window.requestAnimationFrame ||
     window.webkitRequestAnimationFrame ||
@@ -194,7 +235,7 @@
     window.msRequestAnimationFrame ||
     function (callback) {
         console.log('Warn: old browser');
-        setTimeout(callback, DEFAULT_FRAME_INTERVAL);
+        setTimeout(callback, 100);
     };
     </script>
   </body>
