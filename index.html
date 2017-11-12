@@ -7,7 +7,7 @@
   <body>
     <div id="stage-container" style="width: 100%; height: 100%;"></div>
 
-    <script src="https://cdn.anychart.com/js/latest/graphics.min.js"></script>
+    <script src="graphics.min.js"></script>
     <script>
     var player = {
     	x:100,
@@ -160,11 +160,11 @@
     }
     function hitBox() {
 			return boxes.filter(function(box) {
-				box.elem.fill('#ffffff', 1)
 				return box.deleted == false && (ball.x < box.x + box.w  && box.x < ball.x + ball.r * 2) && ( ball.y < box.y + box.h && box.y < ball.y + ball.r * 2)
 			}).map(function(box) {
 				box.elem.fill('#00ff00', 1)
 				box.elem.remove()
+				box.elem = null
 				box.deleted = true
 				score += Math.pow(2, scoreChain)
 				scoreChain++
@@ -196,6 +196,7 @@
     }
     function clearBoxes() {
     	boxes.forEach(function(box) {
+    		if(box.elem) box.elem.remove()
 				var newBox = stage.rect(box.x, box.y, box.w, box.h);
 				mainLayer.addChild(newBox)
 				box.elem = newBox
