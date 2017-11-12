@@ -1,6 +1,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <title>GraphicsJS Basic Example</title>    
   </head>
   <body>
@@ -25,7 +26,7 @@
     var boxes = []
     for(var i=0;i < 7;i++) {
 	    for(var j=0;j < 8;j++) {
-	    	boxes.push({x: 50 + j * 32, y: 50 + i * 20, w: 30, h: 18})
+	    	boxes.push({x: 50 + j * 32, y: 70 + i * 20, w: 30, h: 18})
 	    }
     }
     var score = 0
@@ -42,24 +43,41 @@
 	    // create a stage
 			stage = acgraph.create('stage-container', "100%", "100%");
 			mainLayer = stage.layer()
-			moveToStart()
 			// draw a rectangle
 			var stageRect = stage.rect(30, 30, 340, 350);
-			scoreText = stage.text(340, 10, 'Score ' + score)
+			stageRect.fill('#fff')
+	    stageRect.listen('touchstart', function(event) {
+			  console.log(event.clientX)
+			  var left = event.clientX < (browserSize.width / 2)
+			  if(left) {
+			  	moveLeft()
+			  }else{
+			  	moveRight()
+			  }
+			}, {passive: false, useCapture: false})
+	    stageRect.listen('touchend', function(event) {
+	    	stopLeft()
+	    	stopRight()
+			}, {passive: false, useCapture: false})
+
+			scoreText = stage.text(270, 10, 'Score ' + score)
 			playerRect = stage.rect(player.x, player.y, player.w, player.h);
 			ballRect = stage.circle(ball.x, ball.y, ball.r)
+			mainLayer.addChild(stageRect)
+			/*
 			boxes.map(function(box) {
 				var newBox = stage.rect(box.x, box.y, box.w, box.h);
 				mainLayer.addChild(newBox)
 				box.elem = newBox
 				box.deleted = false
 			})
+			*/
 			mainLayer.addChild(scoreText)
-			mainLayer.addChild(stageRect)
 			mainLayer.addChild(playerRect)
 			mainLayer.addChild(ballRect)
 			var scaleFactor = Math.min(browserSize.width / 400, browserSize.height / 400)
 			mainLayer.scale( scaleFactor, scaleFactor , 0, 0)
+			moveToStart()
 	    draw()
     })
     addEventListener("keydown" , function(e) {
@@ -76,19 +94,6 @@
     		stopRight()
     	}
     });
-    window.addEventListener('touchstart', function(event) {
-		  touches = event.touches;
-		  var left = touches[0].clientX < (browserSize.width / 2)
-		  if(left) {
-		  	moveLeft()
-		  }else{
-		  	moveRight()
-		  }
-		}, false)
-    window.addEventListener('touchend', function(event) {
-    	stopLeft()
-    	stopRight()
-		}, false)
     function moveLeft() {
     	player.state = 'left'
     }
@@ -189,6 +194,14 @@
     	}
 			window.requestAnimationFrame(draw);
     }
+    function clearBoxes() {
+    	boxes.forEach(function(box) {
+				var newBox = stage.rect(box.x, box.y, box.w, box.h);
+				mainLayer.addChild(newBox)
+				box.elem = newBox
+    		box.deleted = false
+    	})
+    }
     function moveToStart() {
     	var startRect = stage.rect(120, 260, 160, 30);
     	startRect.fill("#aaa", 0.5)
@@ -205,6 +218,9 @@
     	phase = 'start'
     }
     function moveToMain() {
+    	score = 0
+    	scoreChain = 0
+    	clearBoxes()
     	ball.x = 200
     	ball.y = 200
     	ball.dx = 0
